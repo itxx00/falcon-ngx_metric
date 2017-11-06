@@ -1,5 +1,6 @@
 local _M = { version = "0.1" }
 
+local default_time_0ms = "-"
 
 local function str_split(instr, s)
     local inputstr = instr
@@ -78,7 +79,12 @@ end
 function _M.latency_count(result_dict, servername)
     local res_dict = result_dict
     local reqtime = ngx.var.request_time
-    local latency_n = tonumber(reqtime) or 0
+    if not reqtime or reqtime == default_time_0ms then
+        reqtime = 0
+    else
+        reqtime = tonumber(reqtime)
+    end
+    local latency_n = reqtime
     local m
     local uri = ngx.var.metric_uri or ""
     if latency_n >= 1 and latency_n < 3 then
@@ -132,8 +138,8 @@ function _M.upstream_time(result_dict, servername)
         return
     end
     local resp_time_arr = str_split(time_s, ",")
-
     local upstream_o = ngx.var.upstream_addr or ""
+
     local upstream_s = string.gsub(string.gsub(upstream_o, " : ", ","), " ", "")
     if upstream_s == "" then
         return
@@ -146,7 +152,12 @@ function _M.upstream_time(result_dict, servername)
     local latency_all = 0.0
     local m
     for i = 1, #up_arr do
-        local latency_n = tonumber(resp_time_arr[i])
+        local latency_n = resp_time_arr[i]
+        if not latency_n or latency_n == default_time_0ms then
+	        latency_n = 0
+        else
+	        latency_n = tonumber(latency_n)
+        end
         local ip = up_arr[i]
         --local m_all = req_sign("ngx.upstream.contacts", servername, ip)
         --safe_incr(res_dict, m_all)
